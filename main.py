@@ -57,12 +57,6 @@ def order_type_menu():
 # === Допоміжна функція ===
 async def safe_edit_or_send(query, text: str, reply_markup=None):
     try:
-        current_text = query.message.text or ""
-        current_markup = query.message.reply_markup
-
-        if (current_text == text) and (current_markup == reply_markup):
-            return
-
         await query.message.edit_text(text, reply_markup=reply_markup, parse_mode="HTML")
     except Exception as e:
         if "message to edit not found" in str(e).lower():
@@ -221,8 +215,11 @@ async def search(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await update.message.reply_text("❌ Нічого не знайдено.")
 
+    # Після пошуку завжди показати головне меню
     await update.message.reply_text("Головне меню:", reply_markup=main_menu())
+    
     return CHOOSING
+
 
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Скасовано.", reply_markup=main_menu())
@@ -252,7 +249,6 @@ conv_handler = ConversationHandler(
         SEARCH: [MessageHandler(filters.TEXT & ~filters.COMMAND, search)],
     },
     fallbacks=[CommandHandler("cancel", cancel)],
-    per_message=True,  # Додаємо щоб уникнути попередження
 )
 
 app.add_handler(conv_handler)
