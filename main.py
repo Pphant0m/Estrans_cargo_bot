@@ -18,6 +18,7 @@ APPLICATIONS_FILE = "applications.txt"  # Файл для збереження �
 CHOOSING, CHOOSING_ORDER_TYPE, NAME, PHONE, ADDRESS, MESSAGE = range(6)
 PASSENGER_NAME, PASSENGER_BIRTHDATE, PASSENGER_PHONE, PASSENGER_ADDRESS = range(6, 10)
 SEARCH = 10
+PRODUCT_ORDER = 11  # ➡️ Новий стан для замовлення продуктів
 
 # === Кнопки та посилання ===
 SOCIAL_LINKS = (
@@ -45,6 +46,7 @@ def main_menu():
             InlineKeyboardButton("📞 Зв’язок з водієм", callback_data="contact_driver"),
             InlineKeyboardButton("📋 Умови та розцінки", callback_data="pricing")
         ],
+        [InlineKeyboardButton("🛒 Замовити продукти", callback_data="order_products")],
         [InlineKeyboardButton("🔍 Пошук заявки", callback_data="search")]
     ])
 
@@ -96,6 +98,13 @@ async def choose_action(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif data == "search":
         await safe_edit_or_send(query, "Введіть текст для пошуку заявки:")
         return SEARCH
+    elif data == "order_products":
+        await safe_edit_or_send(
+            query,
+            "🛒 Тут ви можете зробити замовлення на покупку нами продуктів та інших речей з України та Польщі і ми привеземо все це вам )\n\n"
+            "Введіть, будь ласка, список товарів:"
+        )
+        return PRODUCT_ORDER
 
     return CHOOSING
 
@@ -215,11 +224,30 @@ async def search(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await update.message.reply_text("❌ Нічого не знайдено.")
 
-    # Після пошуку завжди показати головне меню
     await update.message.reply_text("Головне меню:", reply_markup=main_menu())
-    
     return CHOOSING
 
+async def get_product_order(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user
+    user_id = user.id
+    username = user.username or user.full_name
+
+    order_list = update.message.text
+
+    summary = (
+        f"🛒 НОВЕ замовлення продуктів від @{username} (ID: {user_id}):\n\n"
+        f"📝 Список товарів:\n{order_list}"
+    )
+
+    await context.bot.send_message(chat_id=user_id, text="✅ Ваше замовлення прийняте!\n\n" + summary)
+    await update.message.reply_text(SOCIAL_LINKS, parse_mode="HTML")
+    await update.message.reply_text("Головне меню:", reply_markup=main_menu())
+    await context.bot.send_message(chat_id=ADMIN_CHAT_ID, text=summary)
+
+    with open(APPLICATIONS_FILE, "a", encoding="utf-8") as f:
+        f.write(summary + "\n\n")
+
+    return CHOOSING
 
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Скасовано.", reply_markup=main_menu())
@@ -247,6 +275,7 @@ conv_handler = ConversationHandler(
         PASSENGER_PHONE: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_passenger_phone)],
         PASSENGER_ADDRESS: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_passenger_address)],
         SEARCH: [MessageHandler(filters.TEXT & ~filters.COMMAND, search)],
+        PRODUCT_ORDER: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_product_order)],
     },
     fallbacks=[CommandHandler("cancel", cancel)],
 )
