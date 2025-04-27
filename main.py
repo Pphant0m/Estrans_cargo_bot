@@ -46,14 +46,14 @@ def main_menu():
             InlineKeyboardButton("📞 Зв’язок з водієм", callback_data="contact_driver"),
             InlineKeyboardButton("📋 Умови та розцінки", callback_data="pricing")
         ],
-        [InlineKeyboardButton("🛒 Замовити продукти", callback_data="order_products")],
+        [InlineKeyboardButton("🛒 Замовити продукти та інше", callback_data="order_products")],
         [InlineKeyboardButton("🔍 Пошук заявки", callback_data="search")]
     ])
 
 def order_type_menu():
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("🇳🇴 Заявка з Норвегії", callback_data="order_norway")],
-        [InlineKeyboardButton("🇺🇦 Заявка з України", callback_data="order_ukraine")]
+        [InlineKeyboardButton("🇳🇴 Заявка посилки з Норвегії⬅📦", callback_data="order_norway")],
+        [InlineKeyboardButton("🇺🇦 Заявка посилки з України➡️📦", callback_data="order_ukraine")]
     ])
 
 # === Допоміжна функція ===
