@@ -40,7 +40,7 @@ PRICING_URL = "https://t.me/estransuanor/13"
 # === Меню кнопок ===
 def main_menu():
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("🇳🇴 Оформити заявку", callback_data="make_order")],
+        [InlineKeyboardButton("🇳🇴 🇺🇦 📦 Оформити посилку", callback_data="make_order")],
         [InlineKeyboardButton("🧍 Пасажир", callback_data="passenger")],
         [
             InlineKeyboardButton("📞 Зв’язок з водієм", callback_data="contact_driver"),
