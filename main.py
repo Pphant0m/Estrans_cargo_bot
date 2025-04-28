@@ -60,11 +60,11 @@ def order_type_menu():
 async def safe_edit_or_send(query, text: str, reply_markup=None):
     try:
         await query.message.edit_text(text, reply_markup=reply_markup, parse_mode="HTML")
-    except Exception as e:
-        if "message to edit not found" in str(e).lower():
+    except Exception:
+        try:
             await query.message.reply_text(text, reply_markup=reply_markup, parse_mode="HTML")
-        else:
-            raise
+        except Exception:
+            pass
 
 # === Обробники ===
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -195,12 +195,12 @@ async def get_passenger_trip_date(update: Update, context: ContextTypes.DEFAULT_
         f"🎂 Дата народження: {context.user_data['passenger_birthdate']}\n"
         f"📞 Телефон: {context.user_data['passenger_phone']}\n"
         f"📍 Адреса забору: {context.user_data['passenger_address']}\n"
-        f"🗓 Дата поїздки: {context.user_data['passenger_trip_date']}"
+        f"🗓️ Дата поїздки: {context.user_data['passenger_trip_date']}"
     )
 
     await context.bot.send_message(chat_id=user_id, text="✅ Дані прийняті!\n\n" + summary)
     await update.message.reply_text(SOCIAL_LINKS, parse_mode="HTML")
-    await update.message.reply_text("Головне меню:", reply_markup=main_menu())
+    await update.message.reply_text("Готово!", reply_markup=main_menu())
     await context.bot.send_message(chat_id=ADMIN_CHAT_ID, text=summary)
 
     with open(APPLICATIONS_FILE, "a", encoding="utf-8") as f:
@@ -212,7 +212,7 @@ async def search(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.message.text.lower()
 
     if not os.path.exists(APPLICATIONS_FILE):
-        await update.message.reply_text("📂 База заявок пуста.", reply_markup=main_menu())
+        await update.message.reply_text("📂 База заявок поки пуста.", reply_markup=main_menu())
         return CHOOSING
 
     with open(APPLICATIONS_FILE, "r", encoding="utf-8") as f:
@@ -255,9 +255,6 @@ async def get_product_order(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     return CHOOSING
 
-async def fallback_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    return await start(update, context)
-
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Скасовано.", reply_markup=main_menu())
     return CHOOSING
@@ -287,10 +284,7 @@ conv_handler = ConversationHandler(
         SEARCH: [MessageHandler(filters.TEXT & ~filters.COMMAND, search)],
         PRODUCT_ORDER: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_product_order)],
     },
-    fallbacks=[
-        CommandHandler("cancel", cancel),
-        CallbackQueryHandler(fallback_callback),
-    ],
+    fallbacks=[CommandHandler("cancel", cancel)],
 )
 
 app.add_handler(conv_handler)
