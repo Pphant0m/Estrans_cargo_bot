@@ -74,6 +74,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await safe_edit_or_send(update.callback_query, "Привіт! Обери дію:", reply_markup=main_menu())
     return CHOOSING
 
+async def auto_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    return await start(update, context)
+
 async def choose_action(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     if not query:
@@ -159,6 +162,46 @@ async def get_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     return CHOOSING
 
+async def get_passenger_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    context.user_data['passenger_name'] = update.message.text
+    await update.message.reply_text("Введіть дату народження (ДД.ММ.РРРР):")
+    return PASSENGER_BIRTHDATE
+
+async def get_passenger_birthdate(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    context.user_data['passenger_birthdate'] = update.message.text
+    await update.message.reply_text("Введіть номер телефону для зв'язку:")
+    return PASSENGER_PHONE
+
+async def get_passenger_phone(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    context.user_data['passenger_phone'] = update.message.text
+    await update.message.reply_text("Введіть адресу забору (місто, вулиця, номер будинку):")
+    return PASSENGER_ADDRESS
+
+async def get_passenger_address(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    context.user_data['passenger_address'] = update.message.text
+
+    user = update.effective_user
+    user_id = user.id
+    username = user.username or user.full_name
+
+    summary = (
+        f"🚌 Нова заявка пасажира від @{username} (ID: {user_id}):\n\n"
+        f"👤 Ім'я та прізвище: {context.user_data['passenger_name']}\n"
+        f"🎂 Дата народження: {context.user_data['passenger_birthdate']}\n"
+        f"📞 Телефон: {context.user_data['passenger_phone']}\n"
+        f"📍 Адреса забору: {context.user_data['passenger_address']}"
+    )
+
+    await context.bot.send_message(chat_id=user_id, text="✅ Дані прийняті!\n\n" + summary)
+    await update.message.reply_text(SOCIAL_LINKS, parse_mode="HTML")
+    await update.message.reply_text("Готово!", reply_markup=main_menu())
+    await context.bot.send_message(chat_id=ADMIN_CHAT_ID, text=summary)
+
+    with open(APPLICATIONS_FILE, "a", encoding="utf-8") as f:
+        f.write(summary + "\n\n")
+
+    return CHOOSING
+
 async def search(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.message.text.lower()
 
@@ -210,7 +253,7 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Скасовано.", reply_markup=main_menu())
     return CHOOSING
 
-# === Ініціалізація застосунку ===
+# Ініціалізація застосунку
 app = ApplicationBuilder().token(TOKEN).build()
 
 conv_handler = ConversationHandler(
@@ -222,6 +265,10 @@ conv_handler = ConversationHandler(
         PHONE: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_phone)],
         ADDRESS: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_address)],
         MESSAGE: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_message)],
+        PASSENGER_NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_passenger_name)],
+        PASSENGER_BIRTHDATE: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_passenger_birthdate)],
+        PASSENGER_PHONE: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_passenger_phone)],
+        PASSENGER_ADDRESS: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_passenger_address)],
         SEARCH: [MessageHandler(filters.TEXT & ~filters.COMMAND, search)],
         PRODUCT_ORDER: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_product_order)],
     },
@@ -230,6 +277,5 @@ conv_handler = ConversationHandler(
 
 app.add_handler(conv_handler)
 
-if __name__ == "__main__":
-    print("🟢 Estrans Cargo Bot is running (polling)...")
-    app.run_polling()
+# Запуск бота
+app.run_polling()
