@@ -258,4 +258,4 @@ app = ApplicationBuilder().token(TOKEN).build()
 
 conv_handler = ConversationHandler(
     entry_points=[
-        CommandHandler("start", start
+        CommandHandler("start", start)
