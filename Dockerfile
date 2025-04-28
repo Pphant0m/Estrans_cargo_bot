@@ -1,17 +1,16 @@
-# Базовий образ
 FROM python:3.11-slim
 
-# Встановлюємо робочу директорію
+# Set working directory
 WORKDIR /app
 
-# Копіюємо залежності
-COPY requirements.txt .
-
-# Встановлюємо залежності
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Копіюємо код бота
+# Copy files
 COPY . .
 
-# Запускаємо бота
-CMD ["python", "bot.py"]
+# Install dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Unbuffer logs
+ENV PYTHONUNBUFFERED=1
+
+# Start the bot
+CMD ["python", "main.py"]
