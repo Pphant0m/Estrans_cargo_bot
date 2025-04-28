@@ -56,7 +56,6 @@ def order_type_menu():
         [InlineKeyboardButton("🇺🇦 Заявка посилки з України➡️📦", callback_data="order_ukraine")]
     ])
 
-# === Допоміжна функція ===
 async def safe_edit_or_send(query, text: str, reply_markup=None):
     try:
         await query.message.edit_text(text, reply_markup=reply_markup, parse_mode="HTML")
@@ -68,20 +67,11 @@ async def safe_edit_or_send(query, text: str, reply_markup=None):
 
 # === Обробники ===
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.message:
-        await update.message.reply_text("Привіт! Обери дію:", reply_markup=main_menu())
-    elif update.callback_query:
-        await safe_edit_or_send(update.callback_query, "Привіт! Обери дію:", reply_markup=main_menu())
+    await update.message.reply_text("Привіт! Обери дію:", reply_markup=main_menu())
     return CHOOSING
-
-async def auto_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    return await start(update, context)
 
 async def choose_action(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
-    if not query:
-        return CHOOSING
-
     await query.answer()
     data = query.data
 
@@ -93,26 +83,21 @@ async def choose_action(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return PASSENGER_NAME
     elif data == "contact_driver":
         await safe_edit_or_send(query, CONTACT_LINKS, reply_markup=main_menu())
+        return CHOOSING
     elif data == "pricing":
         await safe_edit_or_send(query, f"Ознайомтеся з умовами:\n{PRICING_URL}", reply_markup=main_menu())
+        return CHOOSING
     elif data == "search":
         await safe_edit_or_send(query, "Введіть текст для пошуку заявки:")
         return SEARCH
     elif data == "order_products":
-        await safe_edit_or_send(
-            query,
-            "🛒 Тут ви можете зробити замовлення на покупку нами продуктів та інших речей з України та Польщі і ми привеземо все це вам )\n\n"
-            "Введіть, будь ласка, список товарів:"
-        )
+        await safe_edit_or_send(query, "Введіть, будь ласка, список товарів:")
         return PRODUCT_ORDER
 
     return CHOOSING
 
 async def choose_order_type(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
-    if not query:
-        return CHOOSING
-
     await query.answer()
     context.user_data['order_type'] = query.data
 
@@ -141,18 +126,15 @@ async def get_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data['message'] = update.message.text
 
     user = update.effective_user
-    user_id = user.id
-    username = user.username or user.full_name
-
     summary = (
-        f"📬 Нова {context.user_data['order_type']} від @{username} (ID: {user_id}):\n\n"
+        f"📬 Нова {context.user_data['order_type']} від @{user.username or user.full_name} (ID: {user.id}):\n\n"
         f"👤 Ім’я: {context.user_data['name']}\n"
         f"📞 Телефон: {context.user_data['phone']}\n"
         f"📍 Адреса: {context.user_data['address']}\n"
         f"📝 Повідомлення: {context.user_data['message']}"
     )
 
-    await context.bot.send_message(chat_id=user_id, text="✅ Заявка прийнята!\n\n" + summary)
+    await context.bot.send_message(chat_id=user.id, text="✅ Заявка прийнята!\n\n" + summary)
     await update.message.reply_text(SOCIAL_LINKS, parse_mode="HTML")
     await update.message.reply_text("Готово!", reply_markup=main_menu())
     await context.bot.send_message(chat_id=ADMIN_CHAT_ID, text=summary)
@@ -169,7 +151,7 @@ async def get_passenger_name(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
 async def get_passenger_birthdate(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data['passenger_birthdate'] = update.message.text
-    await update.message.reply_text("Введіть номер телефону для зв'язку:")
+    await update.message.reply_text("Введіть номер телефону:")
     return PASSENGER_PHONE
 
 async def get_passenger_phone(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -186,11 +168,8 @@ async def get_passenger_trip_date(update: Update, context: ContextTypes.DEFAULT_
     context.user_data['passenger_trip_date'] = update.message.text
 
     user = update.effective_user
-    user_id = user.id
-    username = user.username or user.full_name
-
     summary = (
-        f"🚌 Нова заявка пасажира від @{username} (ID: {user_id}):\n\n"
+        f"🚌 Нова заявка пасажира від @{user.username or user.full_name} (ID: {user.id}):\n\n"
         f"👤 Ім'я та прізвище: {context.user_data['passenger_name']}\n"
         f"🎂 Дата народження: {context.user_data['passenger_birthdate']}\n"
         f"📞 Телефон: {context.user_data['passenger_phone']}\n"
@@ -198,9 +177,9 @@ async def get_passenger_trip_date(update: Update, context: ContextTypes.DEFAULT_
         f"🗓️ Дата поїздки: {context.user_data['passenger_trip_date']}"
     )
 
-    await context.bot.send_message(chat_id=user_id, text="✅ Дані прийняті!\n\n" + summary)
+    await context.bot.send_message(chat_id=user.id, text="✅ Дані прийняті!\n\n" + summary)
     await update.message.reply_text(SOCIAL_LINKS, parse_mode="HTML")
-    await update.message.reply_text("Готово!", reply_markup=main_menu())
+    await update.message.reply_text("Головне меню:", reply_markup=main_menu())
     await context.bot.send_message(chat_id=ADMIN_CHAT_ID, text=summary)
 
     with open(APPLICATIONS_FILE, "a", encoding="utf-8") as f:
@@ -212,17 +191,13 @@ async def search(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.message.text.lower()
 
     if not os.path.exists(APPLICATIONS_FILE):
-        await update.message.reply_text("📂 База заявок поки пуста.", reply_markup=main_menu())
+        await update.message.reply_text("📂 База заявок порожня.", reply_markup=main_menu())
         return CHOOSING
 
     with open(APPLICATIONS_FILE, "r", encoding="utf-8") as f:
         data = f.read().lower()
 
-    results = []
-    applications = data.split("\n\n")
-    for app in applications:
-        if query in app:
-            results.append(app.strip())
+    results = [app.strip() for app in data.split("\n\n") if query in app]
 
     if results:
         for res in results:
@@ -235,17 +210,14 @@ async def search(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def get_product_order(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
-    user_id = user.id
-    username = user.username or user.full_name
-
     order_list = update.message.text
 
     summary = (
-        f"🛒 НОВЕ замовлення продуктів від @{username} (ID: {user_id}):\n\n"
+        f"🛒 НОВЕ замовлення продуктів від @{user.username or user.full_name} (ID: {user.id}):\n\n"
         f"📝 Список товарів:\n{order_list}"
     )
 
-    await context.bot.send_message(chat_id=user_id, text="✅ Ваше замовлення прийняте!\n\n" + summary)
+    await context.bot.send_message(chat_id=user.id, text="✅ Ваше замовлення прийняте!\n\n" + summary)
     await update.message.reply_text(SOCIAL_LINKS, parse_mode="HTML")
     await update.message.reply_text("Головне меню:", reply_markup=main_menu())
     await context.bot.send_message(chat_id=ADMIN_CHAT_ID, text=summary)
@@ -259,16 +231,11 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Скасовано.", reply_markup=main_menu())
     return CHOOSING
 
-# === Ініціалізація застосунку ===
+# === Запуск застосунку ===
 app = ApplicationBuilder().token(TOKEN).build()
 
 conv_handler = ConversationHandler(
-    entry_points=[
-        CommandHandler("start", start),
-        MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS | filters.StatusUpdate.LEFT_CHAT_MEMBER, auto_start),
-        MessageHandler(filters.TEXT & ~filters.COMMAND, auto_start),
-        CallbackQueryHandler(choose_action)
-    ],
+    entry_points=[CommandHandler("start", start)],
     states={
         CHOOSING: [CallbackQueryHandler(choose_action)],
         CHOOSING_ORDER_TYPE: [CallbackQueryHandler(choose_order_type)],
