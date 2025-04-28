@@ -15,12 +15,10 @@ if not TOKEN:
 APPLICATIONS_FILE = "applications.txt"  # Файл для збереження заявок
 
 # === Стани ===
-(
-    CHOOSING, CHOOSING_ORDER_TYPE,
-    NAME, PHONE, ADDRESS, MESSAGE,
-    PASSENGER_NAME, PASSENGER_BIRTHDATE, PASSENGER_PHONE, PASSENGER_ADDRESS,
-    SEARCH, PRODUCT_ORDER
-) = range(12)
+CHOOSING, CHOOSING_ORDER_TYPE, NAME, PHONE, ADDRESS, MESSAGE = range(6)
+PASSENGER_NAME, PASSENGER_BIRTHDATE, PASSENGER_PHONE, PASSENGER_ADDRESS = range(6, 10)
+SEARCH = 10
+PRODUCT_ORDER = 11  # ➡️ Новий стан для замовлення продуктів
 
 # === Кнопки та посилання ===
 SOCIAL_LINKS = (
@@ -252,41 +250,12 @@ async def get_product_order(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return CHOOSING
 
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Ви скасували дію.", reply_markup=main_menu())
+    await update.message.reply_text("Скасовано.", reply_markup=main_menu())
     return CHOOSING
 
-# === Основна функція ===
-def main():
-    application = ApplicationBuilder().token(TOKEN).build()
+# === Ініціалізація застосунку ===
+app = ApplicationBuilder().token(TOKEN).build()
 
-    conversation_handler = ConversationHandler(
-        entry_points=[
-            CommandHandler("start", start),
-            MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS | filters.StatusUpdate.LEFT_CHAT_MEMBER, auto_start),
-            CallbackQueryHandler(choose_action)
-        ],
-        states={
-            CHOOSING: [
-                MessageHandler(filters.TEXT & ~filters.COMMAND, auto_start),
-                CallbackQueryHandler(choose_action)
-            ],
-            CHOOSING_ORDER_TYPE: [CallbackQueryHandler(choose_order_type)],
-            NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_name)],
-            PHONE: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_phone)],
-            ADDRESS: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_address)],
-            MESSAGE: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_message)],
-            PASSENGER_NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_passenger_name)],
-            PASSENGER_BIRTHDATE: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_passenger_birthdate)],
-            PASSENGER_PHONE: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_passenger_phone)],
-            PASSENGER_ADDRESS: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_passenger_address)],
-            SEARCH: [MessageHandler(filters.TEXT & ~filters.COMMAND, search)],
-            PRODUCT_ORDER: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_product_order)],
-        },
-        fallbacks=[CommandHandler("cancel", cancel)],
-    )
-
-    application.add_handler(conversation_handler)
-    application.run_polling()
-
-if __name__ == "__main__":
-    main()
+conv_handler = ConversationHandler(
+    entry_points=[
+        CommandHandler("start", start
