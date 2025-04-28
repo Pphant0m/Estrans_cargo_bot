@@ -16,7 +16,7 @@ APPLICATIONS_FILE = "applications.txt"  # Файл для збереження �
 
 # === Стани ===
 CHOOSING, CHOOSING_ORDER_TYPE, NAME, PHONE, ADDRESS, MESSAGE = range(6)
-PASSENGER_NAME, PASSENGER_BIRTHDATE, PASSENGER_PHONE, PASSENGER_ADDRESS, PASSENGER_TRIP_DATE = range(6, 11)
+PASSENGER_NAME, PASSENGER_BIRTHDATE, PASSENGER_PHONE, PASSENGER_ADDRESS = range(6, 10)
 SEARCH = 10
 PRODUCT_ORDER = 11  # ➡️ Новий стан для замовлення продуктів
 
@@ -39,7 +39,7 @@ PRICING_URL = "https://t.me/estransuanor/13"
 
 # === Меню кнопок ===
 def main_menu():
-    return InlineKeyboardMarkup([  
+    return InlineKeyboardMarkup([
         [InlineKeyboardButton("🇳🇴 🇺🇦 📦 Оформити посилку", callback_data="make_order")],
         [InlineKeyboardButton("🧍 Пасажир", callback_data="passenger")],
         [
@@ -51,7 +51,7 @@ def main_menu():
     ])
 
 def order_type_menu():
-    return InlineKeyboardMarkup([  
+    return InlineKeyboardMarkup([
         [InlineKeyboardButton("🇳🇴 Заявка посилки з Норвегії⬅📦", callback_data="order_norway")],
         [InlineKeyboardButton("🇺🇦 Заявка посилки з України➡️📦", callback_data="order_ukraine")]
     ])
@@ -134,26 +134,25 @@ async def get_phone(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def get_address(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data['address'] = update.message.text
-    await update.message.reply_text("Введіть дату поїздки (ДД.ММ.РРРР):")
-    return PASSENGER_TRIP_DATE
+    await update.message.reply_text("Надайте короткий опис посилки:")
+    return MESSAGE
 
-async def get_passenger_trip_date(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    context.user_data['passenger_trip_date'] = update.message.text
+async def get_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    context.user_data['message'] = update.message.text
 
     user = update.effective_user
     user_id = user.id
     username = user.username or user.full_name
 
     summary = (
-        f"🚌 Нова заявка пасажира від @{username} (ID: {user_id}):\n\n"
-        f"👤 Ім'я та прізвище: {context.user_data['passenger_name']}\n"
-        f"🎂 Дата народження: {context.user_data['passenger_birthdate']}\n"
-        f"📞 Телефон: {context.user_data['passenger_phone']}\n"
-        f"📍 Адреса забору: {context.user_data['passenger_address']}\n"
-        f"📅 Дата поїздки: {context.user_data['passenger_trip_date']}"
+        f"📬 Нова {context.user_data['order_type']} від @{username} (ID: {user_id}):\n\n"
+        f"👤 Ім’я: {context.user_data['name']}\n"
+        f"📞 Телефон: {context.user_data['phone']}\n"
+        f"📍 Адреса: {context.user_data['address']}\n"
+        f"📝 Повідомлення: {context.user_data['message']}"
     )
 
-    await context.bot.send_message(chat_id=user_id, text="✅ Дані прийняті!\n\n" + summary)
+    await context.bot.send_message(chat_id=user_id, text="✅ Заявка прийнята!\n\n" + summary)
     await update.message.reply_text(SOCIAL_LINKS, parse_mode="HTML")
     await update.message.reply_text("Готово!", reply_markup=main_menu())
     await context.bot.send_message(chat_id=ADMIN_CHAT_ID, text=summary)
@@ -180,8 +179,28 @@ async def get_passenger_phone(update: Update, context: ContextTypes.DEFAULT_TYPE
 
 async def get_passenger_address(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data['passenger_address'] = update.message.text
-    await update.message.reply_text("Введіть дату поїздки (ДД.ММ.РРРР):")
-    return PASSENGER_TRIP_DATE
+
+    user = update.effective_user
+    user_id = user.id
+    username = user.username or user.full_name
+
+    summary = (
+        f"🚌 Нова заявка пасажира від @{username} (ID: {user_id}):\n\n"
+        f"👤 Ім'я та прізвище: {context.user_data['passenger_name']}\n"
+        f"🎂 Дата народження: {context.user_data['passenger_birthdate']}\n"
+        f"📞 Телефон: {context.user_data['passenger_phone']}\n"
+        f"📍 Адреса забору: {context.user_data['passenger_address']}"
+    )
+
+    await context.bot.send_message(chat_id=user_id, text="✅ Дані прийняті!\n\n" + summary)
+    await update.message.reply_text(SOCIAL_LINKS, parse_mode="HTML")
+    await update.message.reply_text("Готово!", reply_markup=main_menu())
+    await context.bot.send_message(chat_id=ADMIN_CHAT_ID, text=summary)
+
+    with open(APPLICATIONS_FILE, "a", encoding="utf-8") as f:
+        f.write(summary + "\n\n")
+
+    return CHOOSING
 
 async def search(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.message.text.lower()
@@ -250,7 +269,6 @@ conv_handler = ConversationHandler(
         PASSENGER_BIRTHDATE: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_passenger_birthdate)],
         PASSENGER_PHONE: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_passenger_phone)],
         PASSENGER_ADDRESS: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_passenger_address)],
-        PASSENGER_TRIP_DATE: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_passenger_trip_date)],
         SEARCH: [MessageHandler(filters.TEXT & ~filters.COMMAND, search)],
         PRODUCT_ORDER: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_product_order)],
     },
