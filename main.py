@@ -257,16 +257,10 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
 app = ApplicationBuilder().token(TOKEN).build()
 
 conv_handler = ConversationHandler(
-    entry_points=[  # Це місце, де потрібно правильно закрити дужку
-        CommandHandler("start", start)
-    ],  # Закриваємо список entry_points
+    entry_points=[CommandHandler("start", start)],
     states={
-        CHOOSING: [
-            CallbackQueryHandler(choose_action, pattern="^(make_order|passenger|contact_driver|pricing|search|order_products)$")
-        ],
-        CHOOSING_ORDER_TYPE: [
-            CallbackQueryHandler(choose_order_type, pattern="^(order_norway|order_ukraine)$")
-        ],
+        CHOOSING: [CallbackQueryHandler(choose_action, pattern="^(make_order|passenger|contact_driver|pricing|search|order_products)$", per_message=True)],
+        CHOOSING_ORDER_TYPE: [CallbackQueryHandler(choose_order_type, pattern="^(order_norway|order_ukraine)$", per_message=True)],
         NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_name)],
         PHONE: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_phone)],
         ADDRESS: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_address)],
