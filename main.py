@@ -253,9 +253,35 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Скасовано.", reply_markup=main_menu())
     return CHOOSING
 
-# === Ініціалізація застосунку ===
+# Ініціалізація застосунку
 app = ApplicationBuilder().token(TOKEN).build()
 
 conv_handler = ConversationHandler(
-    entry_points=[
+    entry_points=[  # Це місце, де потрібно правильно закрити дужку
         CommandHandler("start", start)
+    ],  # Закриваємо список entry_points
+    states={
+        CHOOSING: [
+            CallbackQueryHandler(choose_action, pattern="^(make_order|passenger|contact_driver|pricing|search|order_products)$")
+        ],
+        CHOOSING_ORDER_TYPE: [
+            CallbackQueryHandler(choose_order_type, pattern="^(order_norway|order_ukraine)$")
+        ],
+        NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_name)],
+        PHONE: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_phone)],
+        ADDRESS: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_address)],
+        MESSAGE: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_message)],
+        PASSENGER_NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_passenger_name)],
+        PASSENGER_BIRTHDATE: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_passenger_birthdate)],
+        PASSENGER_PHONE: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_passenger_phone)],
+        PASSENGER_ADDRESS: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_passenger_address)],
+        SEARCH: [MessageHandler(filters.TEXT & ~filters.COMMAND, search)],
+        PRODUCT_ORDER: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_product_order)],
+    },
+    fallbacks=[CommandHandler("cancel", cancel)],
+)
+
+app.add_handler(conv_handler)
+
+# Запуск бота
+app.run_polling()
