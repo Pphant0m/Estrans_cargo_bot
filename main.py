@@ -259,8 +259,8 @@ app = ApplicationBuilder().token(TOKEN).build()
 conv_handler = ConversationHandler(
     entry_points=[CommandHandler("start", start)],
     states={
-        CHOOSING: [CallbackQueryHandler(choose_action, pattern="^(make_order|passenger|contact_driver|pricing|search|order_products)$", per_message=True)],
-        CHOOSING_ORDER_TYPE: [CallbackQueryHandler(choose_order_type, pattern="^(order_norway|order_ukraine)$", per_message=True)],
+        CHOOSING: [CallbackQueryHandler(choose_action, pattern="^(make_order|passenger|contact_driver|pricing|search|order_products)$")],
+        CHOOSING_ORDER_TYPE: [CallbackQueryHandler(choose_order_type, pattern="^(order_norway|order_ukraine)$")],
         NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_name)],
         PHONE: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_phone)],
         ADDRESS: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_address)],
