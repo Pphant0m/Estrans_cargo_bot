@@ -17,13 +17,13 @@ ADMIN_CHAT_ID = int(os.getenv("ADMIN_CHAT_ID", "123456789"))
 APPLICATIONS_FILE = "applications.txt"
 
 SOCIAL_LINKS = (
-    "Дякуємо за заявку!\n\nНаші соцмережі:\n"
+    "Наші соцмережі:\n"
     "<a href='https://www.facebook.com/groups/1814614405457006?locale=uk_UA'>Facebook</a>\n"
     "<a href='https://t.me/estransuanor'>Telegram</a>"
 )
 
 CONTACT_LINKS = (
-    "\n📞 Контакти водія:\n"
+    "📞 Контакти водія:\n"
     "WhatsApp: https://wa.me/380963508202\n"
     "Telegram: https://t.me/Phant0mWAdeR\n"
     "Телефон: +4796801527\n"
@@ -91,14 +91,14 @@ async def choose_action(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.message.edit_text("Введіть ім'я та прізвище латиницею:")
         return NAME
     elif data == "contact_driver":
-        await query.message.edit_text("📨 Контактна інформація:", reply_markup=main_menu())
-        await query.message.reply_text(
-            SOCIAL_LINKS + "\n" + CONTACT_LINKS,
+        await query.message.edit_text(
+            f"<b>📨 Контактна інформація:</b>\n\n{SOCIAL_LINKS}\n\n{CONTACT_LINKS}",
+            reply_markup=main_menu(),
             parse_mode="HTML",
             disable_web_page_preview=True
         )
     elif data == "pricing":
-        await query.message.edit_text("Умови та розцінки: https://t.me/estransuanor/13", reply_markup=main_menu())
+        await query.message.edit_text("📋 Умови та розцінки: https://t.me/estransuanor/13", reply_markup=main_menu())
     elif data == "search":
         context.user_data['searching'] = True
         await query.message.edit_text("🔍 Введіть ключові слова для пошуку заявки:")
@@ -168,9 +168,8 @@ async def get_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await save_application(update, context)
     await update.message.reply_text("✅ Дані отримано. Дякуємо!", reply_markup=main_menu())
 
-    await update.message.reply_text("📨 Контактна інформація:")
     await update.message.reply_text(
-        SOCIAL_LINKS + "\n" + CONTACT_LINKS,
+        f"<b>📨 Контактна інформація:</b>\n\n{SOCIAL_LINKS}\n\n{CONTACT_LINKS}",
         parse_mode="HTML",
         disable_web_page_preview=True
     )
