@@ -91,12 +91,17 @@ async def choose_action(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.message.edit_text("Введіть ім'я та прізвище латиницею:")
         return NAME
     elif data == "contact_driver":
-        text = SOCIAL_LINKS + "\n" + CONTACT_LINKS
-        await query.message.edit_text(text, reply_markup=main_menu(), parse_mode="HTML", disable_web_page_preview=True)
+        await query.message.edit_text("📨 Контактна інформація:", reply_markup=main_menu())
+        await query.message.reply_text(
+            SOCIAL_LINKS + "\n" + CONTACT_LINKS,
+            parse_mode="HTML",
+            disable_web_page_preview=True
+        )
     elif data == "pricing":
         await query.message.edit_text("Умови та розцінки: https://t.me/estransuanor/13", reply_markup=main_menu())
     elif data == "search":
-        await query.message.edit_text("Введіть текст для пошуку заявки:")
+        context.user_data['searching'] = True
+        await query.message.edit_text("🔍 Введіть ключові слова для пошуку заявки:")
         return MESSAGE
     elif data == "order_products":
         await query.message.edit_text("🛒 Введіть список товарів для замовлення:")
@@ -137,11 +142,33 @@ async def get_date(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return MESSAGE
 
 async def get_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    context.user_data['message'] = update.message.text
+    text = update.message.text
+
+    if context.user_data.get('searching'):
+        context.user_data['searching'] = False
+        results = []
+
+        if os.path.exists(APPLICATIONS_FILE):
+            with open(APPLICATIONS_FILE, "r", encoding="utf-8") as file:
+                applications = file.read().split("\n\n")
+                for app in applications:
+                    if text.lower() in app.lower():
+                        results.append(app)
+
+        if results:
+            for result in results[:5]:
+                await update.message.reply_text(f"🔎 Знайдено:\n{result}")
+        else:
+            await update.message.reply_text("❌ Нічого не знайдено за вашим запитом.")
+
+        return CHOOSING
+
+    # Якщо це не пошук — обробляємо як заявку
+    context.user_data['message'] = text
     await save_application(update, context)
     await update.message.reply_text("✅ Дані отримано. Дякуємо!", reply_markup=main_menu())
 
-    # Відправити контакти після заявки
+    await update.message.reply_text("📨 Контактна інформація:")
     await update.message.reply_text(
         SOCIAL_LINKS + "\n" + CONTACT_LINKS,
         parse_mode="HTML",
@@ -167,13 +194,9 @@ async def save_application(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     summary += f"📝 Повідомлення: {context.user_data.get('message')}"
 
-    # Відправити адміну
     await context.bot.send_message(chat_id=ADMIN_CHAT_ID, text=summary)
-
-    # Відправити користувачу копію заявки
     await update.message.reply_text(f"Ось ваша заявка:\n\n{summary}")
 
-    # Зберегти в файл
     with open(APPLICATIONS_FILE, "a", encoding="utf-8") as file:
         file.write(summary + "\n\n")
 
