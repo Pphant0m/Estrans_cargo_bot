@@ -17,7 +17,7 @@ ADMIN_CHAT_ID = int(os.getenv("ADMIN_CHAT_ID", "123456789"))
 APPLICATIONS_FILE = "applications.txt"
 
 # === Conversation States ===
-CHOOSING, CHOOSING_ORDER_TYPE, NAME, PHONE, ADDRESS, MESSAGE = range(6)
+CHOOSING, CHOOSING_ORDER_TYPE, NAME, PHONE, ADDRESS, DATE, MESSAGE = range(7)
 
 # === Menus ===
 def main_menu():
@@ -73,6 +73,7 @@ async def choose_action(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.message.edit_text("Оберіть тип заявки:", reply_markup=order_type_menu())
         return CHOOSING_ORDER_TYPE
     elif data == "passenger":
+        context.user_data["order_type"] = "passenger"
         await query.message.edit_text("Введіть ім'я та прізвище латиницею:")
         return NAME
     elif data == "contact_driver":
@@ -107,7 +108,17 @@ async def get_phone(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def get_address(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data['address'] = update.message.text
-    await update.message.reply_text("Надайте короткий опис посилки:")
+
+    if context.user_data.get("order_type") == "passenger":
+        await update.message.reply_text("Вкажіть дату поїздки:")
+        return DATE
+    else:
+        await update.message.reply_text("Надайте короткий опис посилки:")
+        return MESSAGE
+
+async def get_date(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    context.user_data['date'] = update.message.text
+    await update.message.reply_text("Надайте короткий опис:")
     return MESSAGE
 
 async def get_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -126,8 +137,12 @@ async def save_application(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"👤 Ім’я: {context.user_data.get('name')}\n"
         f"📞 Телефон: {context.user_data.get('phone')}\n"
         f"📍 Адреса: {context.user_data.get('address')}\n"
-        f"📝 Повідомлення: {context.user_data.get('message')}"
     )
+
+    if context.user_data.get("order_type") == "passenger":
+        summary += f"📅 Дата поїздки: {context.user_data.get('date')}\n"
+
+    summary += f"📝 Повідомлення: {context.user_data.get('message')}"
 
     await context.bot.send_message(chat_id=ADMIN_CHAT_ID, text=summary)
 
@@ -146,6 +161,7 @@ def main():
             NAME: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_name)],
             PHONE: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_phone)],
             ADDRESS: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_address)],
+            DATE: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_date)],
             MESSAGE: [MessageHandler(filters.TEXT & ~filters.COMMAND, get_message)],
         },
         fallbacks=[CommandHandler("cancel", cancel)],
