@@ -1,5 +1,4 @@
 import os
-# from dotenv import load_dotenv
 from telegram import (
     Update, InlineKeyboardButton, InlineKeyboardMarkup
 )
@@ -7,9 +6,6 @@ from telegram.ext import (
     ApplicationBuilder, CommandHandler, MessageHandler, CallbackQueryHandler,
     ConversationHandler, ChatMemberHandler, ContextTypes, filters
 )
-
-# === Load environment variables ===
-# load_dotenv()
 
 TOKEN = os.getenv("BOT_TOKEN")
 ADMIN_CHAT_ID = int(os.getenv("ADMIN_CHAT_ID", "123456789"))
@@ -30,10 +26,8 @@ CONTACT_LINKS = (
     "Телефон: +380963508202"
 )
 
-# === Conversation States ===
 CHOOSING, CHOOSING_ORDER_TYPE, NAME, PHONE, ADDRESS, DATE, MESSAGE = range(7)
 
-# === Menus ===
 def main_menu():
     return InlineKeyboardMarkup([
         [InlineKeyboardButton("📦 Оформити посилку", callback_data="make_order")],
@@ -52,7 +46,6 @@ def order_type_menu():
         [InlineKeyboardButton("🇺🇦 З України➡️📦", callback_data="order_ukraine")]
     ])
 
-# === Handlers ===
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data.clear()
     context.chat_data.clear()
@@ -163,16 +156,20 @@ async def get_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         return CHOOSING
 
-    # Якщо це не пошук — обробляємо як заявку
     context.user_data['message'] = text
-    await save_application(update, context)
-    await update.message.reply_text("✅ Дані отримано. Дякуємо!", reply_markup=main_menu())
 
+    # Спочатку контакти
     await update.message.reply_text(
         f"<b>📨 Контактна інформація:</b>\n\n{SOCIAL_LINKS}\n\n{CONTACT_LINKS}",
         parse_mode="HTML",
         disable_web_page_preview=True
     )
+
+    # Потім підтвердження та меню
+    await update.message.reply_text("✅ Дані отримано. Дякуємо!", reply_markup=main_menu())
+
+    # В самому кінці — заявка
+    await save_application(update, context)
 
     return CHOOSING
 
@@ -199,7 +196,6 @@ async def save_application(update: Update, context: ContextTypes.DEFAULT_TYPE):
     with open(APPLICATIONS_FILE, "a", encoding="utf-8") as file:
         file.write(summary + "\n\n")
 
-# === App Runner ===
 def main():
     app = ApplicationBuilder().token(TOKEN).build()
 
