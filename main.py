@@ -16,6 +16,20 @@ ADMIN_CHAT_ID = int(os.getenv("ADMIN_CHAT_ID", "123456789"))
 
 APPLICATIONS_FILE = "applications.txt"
 
+SOCIAL_LINKS = (
+    "Дякуємо за заявку!\n\nНаші соцмережі:\n"
+    "<a href='https://www.facebook.com/groups/1814614405457006?locale=uk_UA'>Facebook</a>\n"
+    "<a href='https://t.me/estransuanor'>Telegram</a>"
+)
+
+CONTACT_LINKS = (
+    "\n📞 Контакти водія:\n"
+    "WhatsApp: https://wa.me/380963508202\n"
+    "Telegram: https://t.me/Phant0mWAdeR\n"
+    "Телефон: +4796801527\n"
+    "Телефон: +380963508202"
+)
+
 # === Conversation States ===
 CHOOSING, CHOOSING_ORDER_TYPE, NAME, PHONE, ADDRESS, DATE, MESSAGE = range(7)
 
@@ -77,7 +91,8 @@ async def choose_action(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.message.edit_text("Введіть ім'я та прізвище латиницею:")
         return NAME
     elif data == "contact_driver":
-        await query.message.edit_text("Контакт водія: 📞 +380963508202", reply_markup=main_menu())
+        text = SOCIAL_LINKS + "\n" + CONTACT_LINKS
+        await query.message.edit_text(text, reply_markup=main_menu(), parse_mode="HTML", disable_web_page_preview=True)
     elif data == "pricing":
         await query.message.edit_text("Умови та розцінки: https://t.me/estransuanor/13", reply_markup=main_menu())
     elif data == "search":
@@ -125,6 +140,14 @@ async def get_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data['message'] = update.message.text
     await save_application(update, context)
     await update.message.reply_text("✅ Дані отримано. Дякуємо!", reply_markup=main_menu())
+
+    # Відправити контакти після заявки
+    await update.message.reply_text(
+        SOCIAL_LINKS + "\n" + CONTACT_LINKS,
+        parse_mode="HTML",
+        disable_web_page_preview=True
+    )
+
     return CHOOSING
 
 async def save_application(update: Update, context: ContextTypes.DEFAULT_TYPE):
