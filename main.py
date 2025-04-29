@@ -167,8 +167,13 @@ async def save_application(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     summary += f"📝 Повідомлення: {context.user_data.get('message')}"
 
+    # Відправити адміну
     await context.bot.send_message(chat_id=ADMIN_CHAT_ID, text=summary)
 
+    # Відправити користувачу копію заявки
+    await update.message.reply_text(f"Ось ваша заявка:\n\n{summary}")
+
+    # Зберегти в файл
     with open(APPLICATIONS_FILE, "a", encoding="utf-8") as file:
         file.write(summary + "\n\n")
 
