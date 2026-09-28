@@ -34,7 +34,7 @@ def main_menu():
         [InlineKeyboardButton("🧍 Пасажир", callback_data="passenger")],
         [
             InlineKeyboardButton("📞 Зв’язок з водієм", callback_data="contact_driver"),
-            InlineKeyboardButton("📋 Умови та розцінки", callback_data="pricing")
+            InlineKeyboardButton("📋 Паблік", callback_data="pricing")
         ],
         [InlineKeyboardButton("🛒 Замовити продукти", callback_data="order_products")],
         [InlineKeyboardButton("🔍 Пошук заявки", callback_data="search")]
@@ -91,7 +91,7 @@ async def choose_action(update: Update, context: ContextTypes.DEFAULT_TYPE):
             disable_web_page_preview=True
         )
     elif data == "pricing":
-        await query.message.edit_text("📋 Умови та розцінки: https://t.me/estransuanor/13", reply_markup=main_menu())
+        await query.message.edit_text("📋 Паблік: https://t.me/+qA9fXyLN385kOTEy", reply_markup=main_menu())
     elif data == "search":
         context.user_data['searching'] = True
         await query.message.edit_text("🔍 Введіть ключові слова для пошуку заявки:")
