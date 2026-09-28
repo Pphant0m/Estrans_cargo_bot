@@ -15,7 +15,6 @@ APPLICATIONS_FILE = "applications.txt"
 SOCIAL_LINKS = (
     "Наші соцмережі:\n"
     "<a href='https://www.facebook.com/groups/1814614405457006?locale=uk_UA'>Facebook</a>\n"
-    "<a href='https://t.me/estransuanor'>Telegram</a>"
 )
 
 CONTACT_LINKS = (
